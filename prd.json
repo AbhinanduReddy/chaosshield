@@ -1,0 +1,128 @@
+{
+  "project": "ChaosShield",
+  "branchName": "ralph/chaosshield-juiceshop",
+  "description": "GPT-4o powered autonomous security agent that continuously probes OWASP Juice Shop using tool calling",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Project scaffold and configuration",
+      "description": "Create Python project structure. Files: main.py, config.py, requirements.txt, findings/ directory. config.py must define: TARGET_URL='http://localhost:3000', LOOP_INTERVAL=30 (int, from env), MAX_TOOL_CALLS=50 (int, from env), DEMO_EMAIL, DEMO_PASSWORD (from env, default to Juice Shop demo creds), OPENAI_API_KEY (from env — raise clear error on startup if missing). requirements.txt includes: httpx, beautifulsoup4, openai. Create .env.example with all vars. findings/ directory created on startup if missing.",
+      "acceptanceCriteria": [
+        "config.py exists with all required constants",
+        "Raises clear error on startup if OPENAI_API_KEY is missing",
+        "requirements.txt includes httpx, beautifulsoup4, openai",
+        ".env.example documents all env vars",
+        "findings/ directory created on startup if missing"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "HTTP tool definitions and OpenAI tool schemas",
+      "description": "Create tools/http_tools.py with 3 functions: http_get(url, headers={}) -> dict returning {status, body, headers}; http_post(url, body, headers={}) -> dict returning {status, body, headers}; report_finding(title, severity, confidence, endpoint, description, evidence, remediation) -> dict that validates severity (low|medium|high|critical), saves to findings store, returns {id, saved: true}. All HTTP functions enforce 10s timeout via httpx and reject any host other than localhost:3000 (raise ValueError). Also export TOOL_SCHEMAS — list of OpenAI function-calling JSON schemas for all 3 tools.",
+      "acceptanceCriteria": [
+        "tools/http_tools.py exists with http_get, http_post, report_finding functions",
+        "All HTTP requests enforce 10-second timeout",
+        "Any non-localhost:3000 URL raises ValueError",
+        "TOOL_SCHEMAS exported as list of valid OpenAI function schemas",
+        "report_finding validates severity field"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Findings store — JSON persistence",
+      "description": "Create findings/store.py with: save_finding(finding: dict) -> str that appends to findings/all_findings.json and returns UUID; load_all_findings() -> list[dict] that returns all findings or empty list if file missing; save_iteration_snapshot(findings: list[dict], iteration: int) that writes findings/iteration_{N}.json. Each finding must have: id (uuid4), title, severity, confidence, endpoint, description, evidence, remediation, timestamp. all_findings.json is never overwritten — only appended.",
+      "acceptanceCriteria": [
+        "findings/store.py exists with save_finding, load_all_findings, save_iteration_snapshot",
+        "save_finding appends to all_findings.json and returns UUID",
+        "load_all_findings returns empty list if file missing",
+        "save_iteration_snapshot writes iteration_N.json without overwriting previous files",
+        "Each finding includes timestamp field"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Auth module — Juice Shop login",
+      "description": "Create auth/login.py with get_auth_token() -> str | None. POSTs to /rest/user/login with DEMO_EMAIL and DEMO_PASSWORD from config. Returns JWT string on success, None on failure with logged warning. Token returned to agent loop for use in Authorization: Bearer headers.",
+      "acceptanceCriteria": [
+        "auth/login.py exists with get_auth_token()",
+        "POSTs to /rest/user/login with credentials from config",
+        "Returns JWT string on 200 response",
+        "Returns None on failure and logs warning without crashing"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Discovery module — application surface crawler",
+      "description": "Create discovery/crawler.py with crawl() -> dict. Uses httpx + BeautifulSoup to fetch http://localhost:3000 and follow same-origin links. Returns dict with: routes (list of str), api_endpoints (list of str — paths starting with /api/ or /rest/), forms (list of {action, method, inputs}), params (list of str). Returns empty dict with logged warning if Juice Shop is unreachable — does not crash.",
+      "acceptanceCriteria": [
+        "discovery/crawler.py exists with crawl() returning correct dict structure",
+        "Only follows same-origin links",
+        "Returns empty dict (not error) if Juice Shop unreachable",
+        "Discovers at least /api/ and /rest/ endpoints when Juice Shop is running"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "GPT-4o agent loop — core probing engine",
+      "description": "Create agent/runner.py with run_agent(surface: dict, token: str | None, previous_findings: list[dict], iteration: int) -> list[dict]. Builds system prompt with: role as elite red team agent, target URL, application surface (routes/endpoints/forms), summary of previous findings (titles + endpoints) for adaptive strategy, instructions to probe for XSS/IDOR/broken auth/sensitive data/missing headers, instruction to use report_finding for every confirmed vulnerability, constraint to use safe payloads only and localhost only. Calls openai.chat.completions.create() with model='gpt-4o' and TOOL_SCHEMAS as tools. Implements tool call execution loop: send messages → execute tool calls → append results → repeat until no more tool calls or MAX_TOOL_CALLS reached. Collects and returns all findings created via report_finding during the run. Handles OpenAI API errors gracefully.",
+      "acceptanceCriteria": [
+        "agent/runner.py exists with run_agent() function",
+        "System prompt includes surface, previous findings, and security testing instructions",
+        "Calls GPT-4o with TOOL_SCHEMAS as tools",
+        "Implements full tool call execution loop until completion or MAX_TOOL_CALLS",
+        "Returns list of findings created via report_finding during the session",
+        "Handles API errors gracefully — logs and returns empty list"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Reporting module — human-readable output",
+      "description": "Create reporting/reporter.py with print_report(findings: list[dict], iteration: int). Prints formatted report to stdout with: header with iteration number, total findings count, list of findings with [SEVERITY] prefix, top risk (highest severity finding title), recommendations (remediation text per finding), and save path. Prints 'No new findings this iteration.' when list is empty. Does not crash on empty list.",
+      "acceptanceCriteria": [
+        "reporting/reporter.py exists with print_report()",
+        "Prints iteration number and total findings count",
+        "Lists each finding with [SEVERITY] prefix",
+        "Shows top risk and recommendations",
+        "Prints 'No new findings this iteration.' when empty",
+        "Does not crash on empty list"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Loop controller — main execution loop",
+      "description": "Create/update main.py with run_loop() called at __main__ entry. Each iteration: (1) log '[Iteration N] Starting...', (2) call get_auth_token() — continue with None if fails, (3) call crawl() — if unreachable log error, sleep LOOP_INTERVAL, continue without crashing, (4) call load_all_findings() to get previous findings for agent context, (5) call run_agent(surface, token, previous_findings, iteration), (6) call save_iteration_snapshot(new_findings, iteration), (7) call print_report(new_findings, iteration), (8) sleep LOOP_INTERVAL seconds. All per-iteration exceptions are caught — loop never crashes. Ctrl+C exits cleanly with 'ChaosShield stopped.' Iteration counter resumes from last findings/iteration_N.json on startup.",
+      "acceptanceCriteria": [
+        "main.py has run_loop() called at __main__",
+        "Iteration counter resumes correctly from findings/ directory",
+        "Unreachable Juice Shop logs error and continues loop without crash",
+        "All 6 steps run each iteration in correct order",
+        "Ctrl+C exits cleanly with 'ChaosShield stopped.'",
+        "Per-iteration exceptions do not stop the loop"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
