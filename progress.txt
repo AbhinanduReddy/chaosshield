@@ -26,3 +26,25 @@ Started: Sat Mar 28 12:50:46 PDT 2026
   - findings/store.py uses the directory of store.py itself as the findings dir (os.path.dirname(__file__))
   - US-003 covers findings/store.py — it is already fully implemented here, so US-003 can mark passes: true after verifying
 ---
+
+## 2026-03-28 - US-003
+- findings/store.py was already fully implemented during US-002 as a dependency
+- Verified: save_finding (appends to all_findings.json, returns UUID), load_all_findings (returns [] if missing), save_iteration_snapshot (writes iteration_N.json)
+- Each finding gets id (uuid4) and timestamp injected by save_finding
+- Files changed: prd.json (marked US-003 passes: true), progress.txt
+- **Learnings for future iterations:**
+  - findings/store.py appends by reading existing list and writing full file (not true append) — safe as long as only one writer at a time
+  - _FINDINGS_DIR is set to os.path.dirname(__file__) — findings/ dir must exist before save_finding is called (main.py creates it on startup)
+---
+
+## 2026-03-28 - US-004
+- Implemented auth/login.py with get_auth_token() -> str | None
+- POSTs to /rest/user/login with DEMO_EMAIL and DEMO_PASSWORD from config
+- Returns JWT from response["authentication"]["token"] on 200, None on failure with logged warning
+- Uses httpx with 10s timeout; catches all exceptions and logs warning without crashing
+- Files changed: auth/__init__.py (new), auth/login.py (new), prd.json, progress.txt
+- **Learnings for future iterations:**
+  - Juice Shop login endpoint is POST /rest/user/login with JSON body {email, password}
+  - JWT token is nested at response["authentication"]["token"] (not top-level)
+  - auth/login.py imports from config — OPENAI_API_KEY must be set in env when testing this module
+---

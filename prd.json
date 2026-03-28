@@ -45,7 +45,7 @@
         "Each finding includes timestamp field"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -59,7 +59,7 @@
         "Returns None on failure and logs warning without crashing"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
