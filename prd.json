@@ -89,7 +89,7 @@
         "Handles API errors gracefully — logs and returns empty list"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {

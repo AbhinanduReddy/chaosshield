@@ -61,3 +61,19 @@ Started: Sat Mar 28 12:50:46 PDT 2026
   - OPENAI_API_KEY env var must be set when importing any module that imports config.py
   - BeautifulSoup is imported from bs4 (package beautifulsoup4)
 ---
+
+## 2026-03-28 - US-006
+- Implemented agent/runner.py with run_agent(surface, token, previous_findings, iteration) -> list[dict]
+- Files changed: agent/__init__.py (new), agent/runner.py (new), prd.json, progress.txt
+- System prompt includes target URL, surface summary (routes/endpoints/forms/params), previous findings summary, vuln class instructions (XSS/IDOR/broken auth/sensitive data/missing headers), safe payload and localhost-only constraints
+- Tool call loop: send messages → execute all tool_calls → append tool results → repeat until finish_reason != "tool_calls" or MAX_TOOL_CALLS reached
+- report_finding results are captured into new_findings list; finding record built from args + returned id
+- All openai.APIError and unexpected exceptions caught — logs error, returns partial findings collected so far
+- Uses model_dump(exclude_unset=False) to serialize assistant messages with tool_calls for correct message history format
+- **Learnings for future iterations:**
+  - OpenAI assistant messages with tool_calls must be appended as dicts (use .model_dump()); the role field is "assistant"
+  - Tool result messages use role "tool" with tool_call_id matching the original tool_call.id
+  - finish_reason "tool_calls" signals more tools to run; "stop" or "length" means the agent is done
+  - _TOOL_DISPATCH dict pattern cleanly routes tool names to handler functions without if/elif chains
+  - new_findings are reconstructed from report_finding args since save_finding only returns the UUID
+---
