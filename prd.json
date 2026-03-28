@@ -15,7 +15,7 @@
         "findings/ directory created on startup if missing"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -30,7 +30,7 @@
         "report_finding validates severity field"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -45,7 +45,7 @@
         "Each finding includes timestamp field"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -59,7 +59,7 @@
         "Returns None on failure and logs warning without crashing"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -73,7 +73,7 @@
         "Discovers at least /api/ and /rest/ endpoints when Juice Shop is running"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -89,7 +89,7 @@
         "Handles API errors gracefully — logs and returns empty list"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -105,7 +105,7 @@
         "Does not crash on empty list"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -121,7 +121,7 @@
         "Per-iteration exceptions do not stop the loop"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": ""
     }
   ]

@@ -1,0 +1,105 @@
+# Ralph Progress Log
+Started: Sat Mar 28 12:50:46 PDT 2026
+---
+
+## 2026-03-28 - US-001
+- Implemented project scaffold and configuration
+- Files changed: config.py, requirements.txt, .env.example, main.py, findings/ (created)
+- config.py reads all env vars with defaults; raises sys.exit(1) with clear message if OPENAI_API_KEY is missing
+- main.py creates findings/ on startup via os.makedirs("findings", exist_ok=True)
+- **Learnings for future iterations:**
+  - config.py uses sys.exit(1) at module import time if OPENAI_API_KEY missing — importing config.py in tests will exit unless the env var is set
+  - findings/ directory is created by main.py on startup, not by config.py
+  - DEMO_EMAIL default is "demo@juice-sh.op", DEMO_PASSWORD default is "demo" (standard Juice Shop demo creds)
+---
+
+## 2026-03-28 - US-002
+- Implemented HTTP tool definitions and OpenAI tool schemas
+- Files changed: tools/__init__.py, tools/http_tools.py, findings/__init__.py, findings/store.py
+- http_get and http_post enforce 10s timeout via httpx and reject any host other than localhost:3000 (raise ValueError)
+- report_finding validates severity (low|medium|high|critical), saves via findings.store.save_finding, returns {id, saved: true}
+- TOOL_SCHEMAS exported as list of 3 OpenAI function-calling JSON schemas
+- findings/store.py also created here (dependency): save_finding, load_all_findings, save_iteration_snapshot
+- **Learnings for future iterations:**
+  - tools/http_tools.py imports from findings.store — findings/store.py must exist before tools can be tested
+  - URL validation checks hostname == 'localhost' AND port == 3000; default port (80) is also blocked for non-3000 URLs
+  - findings/store.py uses the directory of store.py itself as the findings dir (os.path.dirname(__file__))
+  - US-003 covers findings/store.py — it is already fully implemented here, so US-003 can mark passes: true after verifying
+---
+
+## 2026-03-28 - US-003
+- findings/store.py was already fully implemented during US-002 as a dependency
+- Verified: save_finding (appends to all_findings.json, returns UUID), load_all_findings (returns [] if missing), save_iteration_snapshot (writes iteration_N.json)
+- Each finding gets id (uuid4) and timestamp injected by save_finding
+- Files changed: prd.json (marked US-003 passes: true), progress.txt
+- **Learnings for future iterations:**
+  - findings/store.py appends by reading existing list and writing full file (not true append) — safe as long as only one writer at a time
+  - _FINDINGS_DIR is set to os.path.dirname(__file__) — findings/ dir must exist before save_finding is called (main.py creates it on startup)
+---
+
+## 2026-03-28 - US-004
+- Implemented auth/login.py with get_auth_token() -> str | None
+- POSTs to /rest/user/login with DEMO_EMAIL and DEMO_PASSWORD from config
+- Returns JWT from response["authentication"]["token"] on 200, None on failure with logged warning
+- Uses httpx with 10s timeout; catches all exceptions and logs warning without crashing
+- Files changed: auth/__init__.py (new), auth/login.py (new), prd.json, progress.txt
+- **Learnings for future iterations:**
+  - Juice Shop login endpoint is POST /rest/user/login with JSON body {email, password}
+  - JWT token is nested at response["authentication"]["token"] (not top-level)
+  - auth/login.py imports from config — OPENAI_API_KEY must be set in env when testing this module
+---
+
+## 2026-03-28 - US-005
+- Implemented discovery/crawler.py with crawl() -> dict
+- BFS crawl of localhost:3000: collects routes, api_endpoints (/api/ or /rest/ paths), forms (action/method/inputs), params
+- Gracefully returns empty dict with logged warning if Juice Shop is unreachable (catches all httpx exceptions)
+- Only follows same-origin links; strips fragments for deduplication; always includes /rest/ and /api/ base paths
+- Files changed: discovery/__init__.py (new), discovery/crawler.py (new), prd.json, progress.txt
+- **Learnings for future iterations:**
+  - crawler.py does a one-level BFS to keep the crawl bounded — Juice Shop is an SPA so most routes appear via JS, not HTML links
+  - _is_same_origin() checks netloc (host:port), not just hostname
+  - OPENAI_API_KEY env var must be set when importing any module that imports config.py
+  - BeautifulSoup is imported from bs4 (package beautifulsoup4)
+---
+
+## 2026-03-28 - US-006
+- Implemented agent/runner.py with run_agent(surface, token, previous_findings, iteration) -> list[dict]
+- Files changed: agent/__init__.py (new), agent/runner.py (new), prd.json, progress.txt
+- System prompt includes target URL, surface summary (routes/endpoints/forms/params), previous findings summary, vuln class instructions (XSS/IDOR/broken auth/sensitive data/missing headers), safe payload and localhost-only constraints
+- Tool call loop: send messages → execute all tool_calls → append tool results → repeat until finish_reason != "tool_calls" or MAX_TOOL_CALLS reached
+- report_finding results are captured into new_findings list; finding record built from args + returned id
+- All openai.APIError and unexpected exceptions caught — logs error, returns partial findings collected so far
+- Uses model_dump(exclude_unset=False) to serialize assistant messages with tool_calls for correct message history format
+- **Learnings for future iterations:**
+  - OpenAI assistant messages with tool_calls must be appended as dicts (use .model_dump()); the role field is "assistant"
+  - Tool result messages use role "tool" with tool_call_id matching the original tool_call.id
+  - finish_reason "tool_calls" signals more tools to run; "stop" or "length" means the agent is done
+  - _TOOL_DISPATCH dict pattern cleanly routes tool names to handler functions without if/elif chains
+  - new_findings are reconstructed from report_finding args since save_finding only returns the UUID
+---
+
+## 2026-03-28 - US-007
+- Implemented reporting/reporter.py with print_report(findings, iteration)
+- Files changed: reporting/__init__.py (new), reporting/reporter.py (new), prd.json, progress.txt
+- Prints header with iteration number, total count, each finding with [SEVERITY] prefix, top risk (highest severity), per-finding recommendations, and snapshot save path
+- Prints 'No new findings this iteration.' on empty list; does not crash
+- _SEVERITY_ORDER dict maps severity strings to int rank for max() comparison
+- **Learnings for future iterations:**
+  - severity comparison uses _SEVERITY_ORDER dict with .get() fallback to 0 for unknown severities
+  - save path shown in report is findings/iteration_{N}.json (cosmetic only — actual save done by save_iteration_snapshot in main loop)
+---
+
+## 2026-03-28 - US-008
+- Implemented run_loop() in main.py — full continuous loop controller
+- Files changed: main.py, prd.json, progress.txt
+- Loop resumes from last iteration_N.json snapshot via _resume_iteration() using glob
+- Each iteration: get_auth_token → crawl → load_all_findings → run_agent → save_iteration_snapshot → print_report → sleep
+- Unreachable Juice Shop (empty surface dict) logs error, sleeps, and continues without crash
+- Per-iteration exceptions caught by broad except block — loop never stops unexpectedly
+- Ctrl+C (KeyboardInterrupt) caught outside loop → prints "ChaosShield stopped." cleanly
+- Module imports deferred inside run_loop() to avoid sys.exit(1) on import when OPENAI_API_KEY missing during syntax checks
+- **Learnings for future iterations:**
+  - Deferred imports inside run_loop() allow the module to be imported safely; config's sys.exit(1) only fires when run_loop() is actually called
+  - _resume_iteration() globs findings/iteration_*.json and takes max(N)+1 to continue from where the last run left off
+  - LOOP_INTERVAL sleep is after the iteration work (not before), so first iteration runs immediately on startup
+---
