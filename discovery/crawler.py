@@ -1,4 +1,5 @@
 import logging
+import re
 from urllib.parse import urljoin, urlparse
 
 import httpx
@@ -15,6 +16,17 @@ _PARSED_BASE = urlparse(_BASE)
 def _is_same_origin(url: str) -> bool:
     parsed = urlparse(url)
     return parsed.netloc == _PARSED_BASE.netloc
+
+
+_API_PATH_RE = re.compile(r'["\`]((\/rest\/|\/api\/)[a-zA-Z0-9/_\-:{}]+)["\`]')
+
+
+def _extract_api_paths_from_js(text: str, api_endpoints: list[str]) -> None:
+    """Scan JS/HTML text for quoted /rest/ and /api/ path strings."""
+    for match in _API_PATH_RE.finditer(text):
+        path = match.group(1).rstrip("/") or "/"
+        if path not in api_endpoints:
+            api_endpoints.append(path)
 
 
 def crawl() -> dict:
@@ -90,6 +102,9 @@ def crawl() -> dict:
                 if _is_same_origin(full) and full not in visited:
                     new_urls.append(full)
 
+        # Extract API paths from inline script content
+        _extract_api_paths_from_js(html, api_endpoints)
+
         return new_urls
 
     visited.add(_BASE)
@@ -104,8 +119,10 @@ def crawl() -> dict:
             try:
                 r = client.get(url)
                 content_type = r.headers.get("content-type", "")
-                if "html" in content_type or "javascript" in content_type:
+                if "html" in content_type:
                     _process(url, r.text)
+                elif "javascript" in content_type:
+                    _extract_api_paths_from_js(r.text, api_endpoints)
             except Exception as exc:
                 logger.debug("Could not fetch %s: %s", url, exc)
 

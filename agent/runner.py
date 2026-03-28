@@ -53,12 +53,26 @@ Probe the application for the following vulnerability classes:
 - Sensitive Data Exposure: Check API responses for PII, tokens, passwords
 - Missing Security Headers: Inspect response headers for security misconfigurations
 
+## Known Juice Shop Endpoints to Probe
+Start with these high-value targets (add Authorization header when testing authenticated routes):
+- POST /rest/user/login — brute force, SQL injection (try email: `' OR 1=1--`)
+- GET /rest/user/whoami — check if unauthenticated access leaks user data
+- GET /api/Users — IDOR, check if admin list is exposed without auth
+- GET /api/Users/1, /api/Users/2 — IDOR on individual user records
+- GET /api/Products — check for sensitive data in product descriptions
+- GET /rest/basket/1, /rest/basket/2 — IDOR on other users' baskets
+- POST /api/Users — check if account registration allows admin role assignment
+- GET /rest/admin/application-configuration — admin endpoint, check if accessible without auth
+- GET /rest/saveLoginIp — check security header behavior
+- POST /api/Feedbacks — XSS via feedback body field
+- GET /rest/products/search?q= — SQL injection via search param (try `q='`)
+
 ## Rules of Engagement
 1. ONLY target http://localhost:3000 — all requests must go to localhost:3000
-2. Use safe, non-destructive payloads (e.g., <script>alert(1)</script> for XSS probing — no data deletion, no DoS)
+2. Use safe, non-destructive payloads (e.g., <script>alert(1)</script> for XSS, `' OR 1=1--` for SQLi)
 3. Call report_finding() for EVERY confirmed vulnerability — do not report suspected issues without evidence
-4. Adapt your strategy based on the previous findings listed above — explore new endpoints and attack vectors
-5. Be systematic: probe authentication endpoints, user profile APIs, product APIs, admin routes
+4. A finding is confirmed when: you get unexpected data, a 200 on an admin route without auth, reflected input, or an error revealing DB internals
+5. Adapt your strategy based on the previous findings listed above — explore new endpoints and attack vectors
 
 Begin your security assessment now."""
 

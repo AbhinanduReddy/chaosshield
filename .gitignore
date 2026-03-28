@@ -5,3 +5,5 @@ findings.json
 attack-log.txt
 .last-branch
 archive/
+findings/
+__pycache__/

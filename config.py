@@ -13,8 +13,8 @@ try:
 except ValueError:
     MAX_TOOL_CALLS = 50
 
-DEMO_EMAIL = os.getenv("DEMO_EMAIL", "demo@juice-sh.op")
-DEMO_PASSWORD = os.getenv("DEMO_PASSWORD", "demo")
+DEMO_EMAIL = os.getenv("DEMO_EMAIL", "admin@juice-sh.op")
+DEMO_PASSWORD = os.getenv("DEMO_PASSWORD", "admin123")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
