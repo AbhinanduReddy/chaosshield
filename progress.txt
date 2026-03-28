@@ -77,3 +77,14 @@ Started: Sat Mar 28 12:50:46 PDT 2026
   - _TOOL_DISPATCH dict pattern cleanly routes tool names to handler functions without if/elif chains
   - new_findings are reconstructed from report_finding args since save_finding only returns the UUID
 ---
+
+## 2026-03-28 - US-007
+- Implemented reporting/reporter.py with print_report(findings, iteration)
+- Files changed: reporting/__init__.py (new), reporting/reporter.py (new), prd.json, progress.txt
+- Prints header with iteration number, total count, each finding with [SEVERITY] prefix, top risk (highest severity), per-finding recommendations, and snapshot save path
+- Prints 'No new findings this iteration.' on empty list; does not crash
+- _SEVERITY_ORDER dict maps severity strings to int rank for max() comparison
+- **Learnings for future iterations:**
+  - severity comparison uses _SEVERITY_ORDER dict with .get() fallback to 0 for unknown severities
+  - save path shown in report is findings/iteration_{N}.json (cosmetic only — actual save done by save_iteration_snapshot in main loop)
+---
