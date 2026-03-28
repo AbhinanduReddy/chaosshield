@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHAOS - Swarm Intelligence Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface-2: #1a1a26;
+    --border: #2a2a3a;
+    --text: #e0e0e8;
+    --text-dim: #6a6a80;
+    --red: #ff4444;
+    --red-dim: rgba(255, 68, 68, 0.15);
+    --blue: #4488ff;
+    --blue-dim: rgba(68, 136, 255, 0.15);
+    --green: #44ff88;
+    --green-dim: rgba(68, 255, 136, 0.15);
+    --yellow: #ffaa44;
+    --yellow-dim: rgba(255, 170, 68, 0.15);
+    --purple: #aa66ff;
+    --purple-dim: rgba(170, 102, 255, 0.15);
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', -apple-system, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+  }
+
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, var(--red), var(--blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .header-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    height: calc(100vh - 57px);
+  }
+
+  .stats-panel {
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .stat-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+
+  .stat-card h3 {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+  }
+
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .severity-bar {
+    display: flex;
+    gap: 3px;
+    height: 4px;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+
+  .severity-bar span {
+    border-radius: 2px;
+    transition: flex 0.5s ease;
+  }
+
+  .team-counter {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  .team-counter div {
+    flex: 1;
+    text-align: center;
+    padding: 8px;
+    border-radius: 6px;
+    font-family: var(--mono);
+  }
+
+  .team-counter .red { background: var(--red-dim); color: var(--red); }
+  .team-counter .blue { background: var(--blue-dim); color: var(--blue); }
+
+  .team-counter .count {
+    font-size: 20px;
+    font-weight: 700;
+    display: block;
+  }
+
+  .team-counter .lbl {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.7;
+  }
+
+  .feed-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .feed-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    background: var(--surface);
+  }
+
+  .tab {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: var(--mono);
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    background: transparent;
+    color: var(--text-dim);
+  }
+
+  .tab.active { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+  .tab:hover { color: var(--text); }
+
+  .feed-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .log-entry {
+    padding: 10px 14px;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    font-size: 12px;
+    border-left: 3px solid transparent;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; } }
+
+  .log-entry.red { border-left-color: var(--red); background: var(--red-dim); }
+  .log-entry.blue { border-left-color: var(--blue); background: var(--blue-dim); }
+
+  .log-entry .team-badge {
+    font-family: var(--mono);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-right: 8px;
+  }
+
+  .log-entry.red .team-badge { background: rgba(255,68,68,0.3); color: var(--red); }
+  .log-entry.blue .team-badge { background: rgba(68,136,255,0.3); color: var(--blue); }
+
+  .log-entry .time {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    float: right;
+  }
+
+  .log-entry .action {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .log-entry .detail {
+    color: var(--text-dim);
+    margin-top: 4px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.4;
+    word-break: break-all;
+  }
+
+  .findings-panel {
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .finding-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+    transition: all 0.3s;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .finding-card.resolved {
+    opacity: 0.5;
+    border-color: var(--green);
+  }
+
+  .finding-card.resolved::after {
+    content: 'NEUTRALIZED';
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--green);
+    float: right;
+    font-weight: 700;
+  }
+
+  .finding-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .severity-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    text-transform: uppercase;
+  }
+
+  .severity-critical { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,68,68,0.3); }
+  .severity-high { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(255,170,68,0.3); }
+  .severity-medium { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(170,102,255,0.3); }
+  .severity-low { background: rgba(100,100,120,0.15); color: var(--text-dim); border: 1px solid rgba(100,100,120,0.3); }
+
+  .finding-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+
+  .finding-desc {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+
+  .finding-meta {
+    display: flex;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .mitigation-box {
+    margin-top: 10px;
+    padding: 10px;
+    background: var(--green-dim);
+    border: 1px solid rgba(68,255,136,0.2);
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--green);
+    white-space: pre-wrap;
+    line-height: 1.4;
+    max-height: 150px;
+    overflow-y: auto;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">CHAOS</div>
+  <div class="header-meta">
+    <span><span class="live-dot"></span>LIVE</span>
+    <span id="clock"></span>
+    <span id="uptime"></span>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="stats-panel">
+    <div class="stat-card">
+      <h3>Threat Surface</h3>
+      <div class="stat-row">
+        <span class="stat-value" id="open-count" style="color:var(--red)">0</span>
+        <span class="stat-label">open findings</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-value" id="resolved-count" style="color:var(--green); font-size:20px">0</span>
+        <span class="stat-label">resolved</span>
+      </div>
+      <div class="severity-bar" id="severity-bar">
+        <span style="background:var(--red); flex:0"></span>
+        <span style="background:var(--yellow); flex:0"></span>
+        <span style="background:var(--purple); flex:0"></span>
+        <span style="background:var(--text-dim); flex:0"></span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <h3>Swarm Activity</h3>
+      <div class="team-counter">
+        <div class="red">
+          <span class="count" id="red-actions">0</span>
+          <span class="lbl">Offensive</span>
+        </div>
+        <div class="blue">
+          <span class="count" id="blue-actions">0</span>
+          <span class="lbl">Defensive</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <h3>Severity Breakdown</h3>
+      <div class="stat-row"><span style="color:var(--red); font-family:var(--mono); font-size:13px">Critical</span><span class="stat-label" id="crit-count">0</span></div>
+      <div class="stat-row"><span style="color:var(--yellow); font-family:var(--mono); font-size:13px">High</span><span class="stat-label" id="high-count">0</span></div>
+      <div class="stat-row"><span style="color:var(--purple); font-family:var(--mono); font-size:13px">Medium</span><span class="stat-label" id="med-count">0</span></div>
+      <div class="stat-row"><span style="color:var(--text-dim); font-family:var(--mono); font-size:13px">Low</span><span class="stat-label" id="low-count">0</span></div>
+    </div>
+
+    <div class="stat-card">
+      <h3>Recent Activity</h3>
+      <div class="stat-row"><span class="stat-label">Actions (5min)</span><span class="stat-label" id="recent-logs">0</span></div>
+    </div>
+  </div>
+
+  <div class="feed-panel">
+    <div class="feed-header">
+      <button class="tab active" data-filter="all">All</button>
+      <button class="tab" data-filter="red">Offensive</button>
+      <button class="tab" data-filter="blue">Defensive</button>
+      <button class="tab" data-filter="findings">Findings Only</button>
+    </div>
+    <div class="feed-scroll" id="feed"></div>
+  </div>
+
+  <div class="findings-panel">
+    <h3 style="font-family:var(--mono); font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:12px">Findings</h3>
+    <div id="findings-list"></div>
+  </div>
+</div>
+
+<script>
+  const feed = document.getElementById('feed');
+  const findingsList = document.getElementById('findings-list');
+  let currentFilter = 'all';
+  const maxEntries = 200;
+  const startTime = Date.now();
+
+  setInterval(() => {
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    document.getElementById('uptime').textContent = m + 'm ' + s + 's';
+  }, 1000);
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentFilter = tab.dataset.filter;
+    });
+  });
+
+  const es = new EventSource('/events');
+  es.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'log') addLogEntry(msg.data);
+    if (msg.type === 'finding') addFinding(msg.data);
+    if (msg.type === 'finding-updated') updateFinding(msg.data);
+  };
+
+  function addLogEntry(log) {
+    if (currentFilter !== 'all' && currentFilter !== log.team) return;
+    if (currentFilter === 'findings') return;
+
+    const div = document.createElement('div');
+    div.className = 'log-entry ' + log.team;
+    const badge = log.team === 'red' ? 'ATTACK' : 'DEFEND';
+    let html = '<span class="team-badge">' + badge + '</span>';
+    html += '<span class="action">' + esc(log.action) + '</span>';
+    html += '<span class="time">' + new Date(log.created_at).toLocaleTimeString() + '</span>';
+    if (log.detail) html += '<div class="detail">' + esc(log.detail) + '</div>';
+    div.innerHTML = html;
+    feed.prepend(div);
+    while (feed.children.length > maxEntries) feed.removeChild(feed.lastChild);
+  }
+
+  function addFinding(f) {
+    const card = document.createElement('div');
+    card.className = 'finding-card';
+    card.id = 'finding-' + f.id;
+    let html = '<div class="finding-header">';
+    html += '<span class="severity-badge severity-' + f.severity + '">' + f.severity + '</span>';
+    html += '<span class="finding-meta">' + esc(f.target) + ' &middot; ' + esc(f.category) + '</span>';
+    html += '</div>';
+    html += '<div class="finding-title">' + esc(f.title) + '</div>';
+    html += '<div class="finding-desc">' + esc(f.description) + '</div>';
+    if (f.attack_path) {
+      html += '<div class="finding-meta" style="white-space:pre-wrap; font-size:10px; margin-top:6px; color:var(--yellow)">';
+      html += esc(f.attack_path) + '</div>';
+    }
+    card.innerHTML = html;
+    findingsList.prepend(card);
+  }
+
+  function updateFinding(f) {
+    const card = document.getElementById('finding-' + f.id);
+    if (!card) return;
+    card.classList.add('resolved');
+    if (f.mitigation) {
+      const mBox = document.createElement('div');
+      mBox.className = 'mitigation-box';
+      mBox.textContent = f.mitigation;
+      card.appendChild(mBox);
+    }
+  }
+
+  function esc(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  async function loadInitial() {
+    try {
+      const [statsRes, logsRes, findingsRes] = await Promise.all([
+        fetch('/api/stats'),
+        fetch('/api/logs?limit=50'),
+        fetch('/api/findings'),
+      ]);
+      const stats = await statsRes.json();
+      const logs = await logsRes.json();
+      const findings = await findingsRes.json();
+
+      updateStats(stats);
+      logs.reverse().forEach(l => addLogEntry(l));
+      findings.reverse().forEach(f => {
+        addFinding(f);
+        if (f.status === 'resolved') updateFinding(f);
+      });
+    } catch (e) {
+      console.error('Initial load failed', e);
+    }
+  }
+
+  function updateStats(s) {
+    document.getElementById('open-count').textContent = s.open;
+    document.getElementById('resolved-count').textContent = s.resolved;
+    document.getElementById('red-actions').textContent = s.redActions;
+    document.getElementById('blue-actions').textContent = s.blueActions;
+    document.getElementById('crit-count').textContent = s.critical;
+    document.getElementById('high-count').textContent = s.high;
+    document.getElementById('med-count').textContent = s.medium;
+    document.getElementById('low-count').textContent = s.low;
+    document.getElementById('recent-logs').textContent = s.recentLogs;
+
+    const total = Math.max(s.critical + s.high + s.medium + s.low, 1);
+    const bars = document.querySelectorAll('#severity-bar span');
+    bars[0].style.flex = s.critical || 0;
+    bars[1].style.flex = s.high || 0;
+    bars[2].style.flex = s.medium || 0;
+    bars[3].style.flex = s.low || 0;
+  }
+
+  setInterval(async () => {
+    try {
+      const r = await fetch('/api/stats');
+      updateStats(await r.json());
+    } catch {}
+  }, 3000);
+
+  loadInitial();
+</script>
+</body>
+</html>

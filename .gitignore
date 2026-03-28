@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+logs/
+
+# OS
+.DS_Store
+
+# Playwright
+.playwright-mcp/
+
+# Juice Shop (its own repo)
+juice-shop/
