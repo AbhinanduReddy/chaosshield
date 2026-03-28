@@ -88,3 +88,18 @@ Started: Sat Mar 28 12:50:46 PDT 2026
   - severity comparison uses _SEVERITY_ORDER dict with .get() fallback to 0 for unknown severities
   - save path shown in report is findings/iteration_{N}.json (cosmetic only — actual save done by save_iteration_snapshot in main loop)
 ---
+
+## 2026-03-28 - US-008
+- Implemented run_loop() in main.py — full continuous loop controller
+- Files changed: main.py, prd.json, progress.txt
+- Loop resumes from last iteration_N.json snapshot via _resume_iteration() using glob
+- Each iteration: get_auth_token → crawl → load_all_findings → run_agent → save_iteration_snapshot → print_report → sleep
+- Unreachable Juice Shop (empty surface dict) logs error, sleeps, and continues without crash
+- Per-iteration exceptions caught by broad except block — loop never stops unexpectedly
+- Ctrl+C (KeyboardInterrupt) caught outside loop → prints "ChaosShield stopped." cleanly
+- Module imports deferred inside run_loop() to avoid sys.exit(1) on import when OPENAI_API_KEY missing during syntax checks
+- **Learnings for future iterations:**
+  - Deferred imports inside run_loop() allow the module to be imported safely; config's sys.exit(1) only fires when run_loop() is actually called
+  - _resume_iteration() globs findings/iteration_*.json and takes max(N)+1 to continue from where the last run left off
+  - LOOP_INTERVAL sleep is after the iteration work (not before), so first iteration runs immediately on startup
+---

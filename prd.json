@@ -121,7 +121,7 @@
         "Per-iteration exceptions do not stop the loop"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": ""
     }
   ]
