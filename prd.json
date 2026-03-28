@@ -73,7 +73,7 @@
         "Discovers at least /api/ and /rest/ endpoints when Juice Shop is running"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {

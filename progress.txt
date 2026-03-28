@@ -48,3 +48,16 @@ Started: Sat Mar 28 12:50:46 PDT 2026
   - JWT token is nested at response["authentication"]["token"] (not top-level)
   - auth/login.py imports from config — OPENAI_API_KEY must be set in env when testing this module
 ---
+
+## 2026-03-28 - US-005
+- Implemented discovery/crawler.py with crawl() -> dict
+- BFS crawl of localhost:3000: collects routes, api_endpoints (/api/ or /rest/ paths), forms (action/method/inputs), params
+- Gracefully returns empty dict with logged warning if Juice Shop is unreachable (catches all httpx exceptions)
+- Only follows same-origin links; strips fragments for deduplication; always includes /rest/ and /api/ base paths
+- Files changed: discovery/__init__.py (new), discovery/crawler.py (new), prd.json, progress.txt
+- **Learnings for future iterations:**
+  - crawler.py does a one-level BFS to keep the crawl bounded — Juice Shop is an SPA so most routes appear via JS, not HTML links
+  - _is_same_origin() checks netloc (host:port), not just hostname
+  - OPENAI_API_KEY env var must be set when importing any module that imports config.py
+  - BeautifulSoup is imported from bs4 (package beautifulsoup4)
+---
