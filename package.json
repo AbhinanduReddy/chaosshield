@@ -1,0 +1,20 @@
+{
+  "name": "ralph",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "red": "node agents/red-team.mjs",
+    "blue": "node agents/blue-team.mjs",
+    "dashboard": "node dashboard/server.mjs",
+    "all": "concurrently \"npm run red\" \"npm run blue\" \"npm run dashboard\""
+  },
+  "description": "Swarm-driven autonomous security platform",
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "openai": "^4.77.0",
+    "express": "^4.21.0",
+    "concurrently": "^9.1.0"
+  }
+}

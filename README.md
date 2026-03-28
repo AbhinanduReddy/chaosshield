@@ -1,85 +1,214 @@
-# ChaosShield
+<h1 align="center">
+  <img src="https://img.shields.io/badge/STATUS-AUTONOMOUS-ff4444?style=for-the-badge&labelColor=0a0a0f" />
+  <br/>
+  CHAOS
+  <br/>
+  <sub><sup>Swarm-Driven Autonomous Security Platform</sup></sub>
+</h1>
 
-An AI-powered security testing agent that autonomously probes web applications for vulnerabilities using GPT-4o.
+<p align="center">
+  <em>An AI swarm that attacks itself. Zero human intervention. Constant evolution.</em>
+</p>
 
-## How it works
+<p align="center">
+  <img src="https://img.shields.io/badge/Swarm-OFFENSIVE-ff4444?style=flat-square&labelColor=1a1a26" />
+  <img src="https://img.shields.io/badge/Swarm-DEFENSIVE-4488ff?style=flat-square&labelColor=1a1a26" />
+  <img src="https://img.shields.io/badge/Live-8080-44ff88?style=flat-square&labelColor=1a1a26" />
+</p>
 
-ChaosShield runs a continuous loop:
+---
 
-1. **Auth** — logs into the target app and obtains a JWT token
-2. **Crawl** — discovers routes, API endpoints, and forms (including by scanning JS bundles)
-3. **Probe** — an OpenAI GPT-4o agent uses HTTP tools to test for XSS, SQLi, IDOR, broken auth, and sensitive data exposure
-4. **Report** — confirmed findings are saved to `findings/` and printed as a human-readable report
+### What is CHAOS?
 
-Currently targets [OWASP Juice Shop](https://github.com/juice-shop/juice-shop) running locally.
+CHAOS deploys an **autonomous swarm** — specialized AI units that continuously probe, exploit, and harden your target infrastructure. **Offensive units** hunt for vulnerabilities across every surface: injection flaws, broken auth, exposed configs, weak credentials. **Defensive units** observe, prioritize, and auto-remediate in real-time — hardening configs, rotating secrets, patching attack surfaces.
 
-## Requirements
+No playbooks. No manual scanning. Each unit decides its next move autonomously, coordinating through a shared intelligence layer.
 
-- Python 3.11+
-- Docker (to run Juice Shop)
-- OpenAI API key
+The swarm never stops. Watch it live on the dashboard.
 
-## Setup
+---
+
+### Architecture
+
+```
+                    ┌─────────────────────┐
+                    │   CHAOS Dashboard    │
+                    │   localhost:8080     │
+                    │   SSE + REST API     │
+                    └────────┬────────────┘
+                             │
+                    ┌────────┴────────────┐
+                    │   Swarm Intelligence │
+                    │   SQLite (WAL)       │
+                    │   findings + logs    │
+                    └────────┬────────────┘
+                             │
+               ┌─────────────┴─────────────┐
+               │                           │
+      ┌────────┴────────┐       ┌─────────┴───────┐
+      │  OFFENSIVE       │       │  DEFENSIVE        │
+      │  SWARM            │       │  SWARM            │
+      │  Attack Units     │──────▶│  Defense Units    │
+      │  15s waves        │       │  20s waves        │
+      └────────┬────────┘       └─────────────────┘
+               │
+    ┌──────────┼──────────┐
+    │          │          │
+  HTTP      PostgreSQL  Redis
+  Probing   Dumping    Key scanning
+```
+
+---
+
+### Quick Start
 
 ```bash
-# Start Juice Shop
-docker run -d -p 3000:3000 bkimminich/juice-shop
+# 1. Clone
+git clone https://github.com/NickGDev/chaos.git && cd chaos
 
-# Install dependencies
-pip install -r requirements.txt
+# 2. Install
+npm install
 
-# Configure environment
+# 3. Configure
 cp .env.example .env
-# Edit .env and set your OPENAI_API_KEY
+# Edit .env with your target details and OpenAI API key
+
+# 4. Deploy the swarm
+npm run all
 ```
 
-## Configuration
+Open `http://localhost:8080` — the swarm is already active.
 
-Create a `.env` file:
+---
 
-```env
-OPENAI_API_KEY=sk-...
-JUICE_SHOP_URL=http://localhost:3000   # optional, default shown
-LOOP_INTERVAL=30                        # seconds between iterations
-MAX_TOOL_CALLS=50                       # max agent tool calls per iteration
-DEMO_EMAIL=admin@juice-sh.op            # target app credentials
-DEMO_PASSWORD=admin123
-```
-
-## Running
+### Individual Commands
 
 ```bash
-python main.py
+npm run red        # Offensive swarm only
+npm run blue       # Defensive swarm only
+npm run dashboard  # Dashboard only
+npm run all        # Full swarm deployment
 ```
 
-The agent will loop continuously, printing a report after each iteration. Stop with `Ctrl+C`.
+---
 
-## Project structure
+### Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `TARGET_WEB_URL` | Target application URL | `http://localhost:3000` |
+| `TARGET_CDN_URL` | Target CDN/Proxy URL | `http://localhost:8080` |
+| `TARGET_DB_HOST` | PostgreSQL host | `localhost` |
+| `TARGET_DB_PORT` | PostgreSQL port | `5432` |
+| `TARGET_DB_USER` | PostgreSQL user | — |
+| `TARGET_DB_PASS` | PostgreSQL password | — |
+| `TARGET_DB_NAME` | PostgreSQL database | — |
+| `TARGET_REDIS_HOST` | Redis host | `localhost` |
+| `TARGET_REDIS_PORT` | Redis port | `6379` |
+| `TARGET_REDIS_PASS` | Redis password | — |
+| `OPENAI_API_KEY` | OpenAI API key | — |
+| `OPENAI_MODEL` | Standard model | `gpt-4o-mini` |
+| `OPENAI_HIGH_MODEL` | High-capability model | `gpt-4o` |
+| `RED_TEAM_INTERVAL_MS` | Offensive wave interval | `15000` |
+| `BLUE_TEAM_INTERVAL_MS` | Defensive wave interval | `20000` |
+| `DASHBOARD_PORT` | Dashboard port | `8080` |
+
+---
+
+### Offensive Swarm
+
+Deploys in waves. Each wave autonomously selects and executes attack vectors across multiple units:
+
+- HTTP endpoint probing (SQL injection, XSS, path traversal, auth bypass)
+- PostgreSQL access and data extraction
+- Redis key scanning and raw protocol attacks
+- Default credential testing
+- JWT analysis and forgery detection
+- Security misconfiguration discovery
+- OWASP Top 10 mapping
+
+Every finding is categorized by severity (`critical` / `high` / `medium` / `low`) and logged with full attack paths.
+
+### Defensive Swarm
+
+Monitors the shared intelligence layer and auto-remediates on its own wave cycle:
+
+- Credential rotation and password policy enforcement
+- Database hardening (connection encryption, access controls)
+- Redis ACL tightening
+- Header security (CSRF tokens, server token suppression)
+- Input validation and prepared statements
+- Rate limiting configurations
+- Field-level access controls
+
+---
+
+### Dashboard
+
+Real-time SSE-powered swarm intelligence monitor at `localhost:8080`:
+
+- **Threat surface stats** — active/neutralized findings, severity breakdown
+- **Live activity feed** — filtered by Offensive / Defensive / Findings
+- **Finding cards** — severity badges, attack paths, mitigation details
+- **Swarm counters** — total actions per swarm
+- **Uptime clock** — how long the swarm has been running
+
+---
+
+### Project Structure
 
 ```
-main.py              # Entry point — main execution loop
-config.py            # Environment-based configuration
-auth/login.py        # Authenticates against the target app
-discovery/crawler.py # Crawls app surface and JS bundles for API endpoints
-agent/runner.py      # GPT-4o agent loop with HTTP tools
-tools/http_tools.py  # http_get, http_post, report_finding tools
-findings/store.py    # Persists findings to JSON
-reporting/reporter.py# Formats and prints the findings report
+chaos/
+├── agents/
+│   ├── red-team.mjs      # Offensive swarm units
+│   └── blue-team.mjs     # Defensive swarm units
+├── chaosshield/
+│   ├── agent/            # GPT-4o probe agent loop
+│   ├── auth/             # Target app authentication
+│   ├── discovery/        # JS bundle API crawler
+│   ├── findings/         # Findings persistence
+│   ├── reporting/        # Human-readable report output
+│   ├── tools/            # HTTP + report_finding tools
+│   ├── config.py
+│   ├── main.py           # ChaosShield entry point
+│   └── requirements.txt
+├── dashboard/
+│   ├── server.mjs        # Express + SSE backend
+│   └── index.html        # Swarm intelligence monitor UI
+├── shared/
+│   └── db.mjs            # SQLite schema + connection
+├── .env.example
+├── package.json
+└── README.md
 ```
 
-## Example output
+---
 
+### ChaosShield (Python Probe Loop)
+
+A standalone GPT-4o agent that crawls and probes a target app each iteration, writing confirmed findings to disk.
+
+```bash
+# Prerequisites: Python 3.11+, Juice Shop running on :3000
+pip install -r chaosshield/requirements.txt
+python chaosshield/main.py
 ```
-===== ChaosShield Report — Iteration 1 =====
 
-[CRITICAL] SQL Injection in Login
-  Endpoint: POST /rest/user/login
-  Confidence: high
-  Email input `' OR 1=1--` returned 200 with valid JWT token,
-  bypassing authentication entirely.
+Discovers API endpoints by scanning JS bundles, then probes for XSS, SQLi, IDOR, broken auth, and sensitive data exposure.
 
-[HIGH] IDOR — User Data Exposure
-  Endpoint: GET /api/Users
-  Confidence: high
-  Unauthenticated GET returns full user list including emails and password hashes.
-```
+---
+
+### Built With
+
+- **Node.js** — ESM throughout
+- **Python 3.11** — ChaosShield probe loop
+- **better-sqlite3** — zero-config embedded database with WAL mode
+- **Express** — dashboard API and static serving
+- **OpenAI** — autonomous swarm decision-making
+- **Server-Sent Events** — real-time dashboard updates
+
+---
+
+### License
+
+MIT
